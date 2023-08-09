@@ -8,19 +8,6 @@ import cv2
 from functools import partial
 import math
 
-
-"""
-Load the videos with annotations. 
-"""
-
-
-def loadFrames():
-    """
-    Loads the desired frames from the youtube video 
-    directly without having to download the .mp4 file. 
-    """
-
-
 def loadChangeIt(oscar):
     """
     Load videos with annotations, there are 667 of them so doable.
@@ -35,7 +22,7 @@ def loadChangeIt(oscar):
     for category in categories:
         categoryAnnotatedFrames = loadCategoryAnnotated(category, path, desiredSize)
         print("shape of category annotated: ", categoryAnnotatedFrames.shape)
-
+        
 
 
 def loadCategoryAnnotated(category, path, desiredSize):

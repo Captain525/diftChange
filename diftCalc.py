@@ -31,7 +31,7 @@ def callDift(frames, points):
         listResultPoints.append(matchedArrayPoints)
         #fix this. 
         savePoints(pointsFrame, str(i), True)
-        saveResults(matchedArrayPoints, str(i))
+        saveResults(matchedArrayPoints, str(i), True)
     arrayPoints = np.stack(listResultPoints)
     return arrayPoints
 def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, beginningPoints):
