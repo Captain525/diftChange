@@ -6,7 +6,7 @@ import numpy as np
 import torch.nn as nn
 from src.models.dift_sd import SDFeaturizer
 from imageDisplay import displayImages, convertPIL
-from dataTransfer import saveResults
+from dataTransfer import saveResults, savePoints
 def callDift(frames, points):
     """
     Frames size: 
@@ -27,10 +27,13 @@ def callDift(frames, points):
         pointsFrame = points[i]
         #maybe add prompt later. 
         matchedArrayPoints = doMatching(dift, beginningFrame, endFrame, "", sizeFinal, sizeNetwork, pointsFrame)
+        print("matched array points size: ", matchedArrayPoints.shape)
         listResultPoints.append(matchedArrayPoints)
         #fix this. 
-        saveResults(matchedArrayPoints, i)
-    return np.stack(matchedArrayPoints)
+        savePoints(pointsFrame, str(i), True)
+        saveResults(matchedArrayPoints, str(i))
+    arrayPoints = np.stack(listResultPoints)
+    return arrayPoints
 def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, beginningPoints):
     """
     takes in the beginning and end frames and the dift model and does the matching as desired. 

@@ -2,6 +2,7 @@
 from loadChange import *
 from diftCalc import callDift
 from imageDisplay import displayImages, convertPIL
+from dataTransfer import saveImages
 def diftChange(oscar):
     """
     Pipeline steps: 
@@ -25,8 +26,12 @@ def diftChange(oscar):
 
     points = generateRandomPoints(numVideos, numPoints, finalSize)
     resultPoints = callDift(categoryFrames, points)
-    beginningImage = convertPIL(categoryFrames[0, 0])
-    endImage = convertPIL(categoryFrames[0, 2])
+    for i in range(numVideos):
+
+        beginningImage = convertPIL(categoryFrames[0, 0], finalSize[0])
+        endImage = convertPIL(categoryFrames[0, 2], finalSize[0])
+        saveImages(str(i), beginningImage, endImage, True)
+
     displayImages(beginningImage, endImage, points[0], resultPoints[0])
 def diftChangeOneVideo(oscar):
     numPoints = 10
@@ -85,4 +90,4 @@ def generateRandomPoints(numVideos, numPoints, desiredSize):
         listPoints.append(coords)
     return np.stack(listPoints, dtype = int)
     
-diftChange(False)
+diftChange(True)

@@ -8,6 +8,7 @@ def displayImages(beginningImage, endImage, initPoints, endPoints):
     fig, axes = plt.subplots(1, 2, figsize=(2*fig_size, fig_size))
     plt.tight_layout()
     images = [beginningImage, endImage]
+    print(endPoints.shape)
     colors = cm.rainbow(np.linspace(0, 1,endPoints.shape[0]))
     for i in range(2):
             axes[i].imshow(images[i])
