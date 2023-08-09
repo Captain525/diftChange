@@ -31,6 +31,10 @@ def displayImages(beginningImage, endImage, initPoints, endPoints):
     axes[i].set_title('target image')
     plt.show()
 def convertPIL(imageArray, img_size):
-    image = Image.fromarray(np.uint8(imageArray))
+    #open cv uses BGR, image uses RGB
+    image = Image.fromarray(np.uint8(imageArray), "RGB")
     image = image.resize((img_size, img_size))
     return image
+
+def makeIntoImageAndDisplay(frame):
+     Image.show(frame)

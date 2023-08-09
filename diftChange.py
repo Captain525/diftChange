@@ -19,12 +19,13 @@ def diftChange(oscar):
     path =   "/mnt/c/Users/dheff/CodingProjects/PythonProjects/PALM Research/data/ChangeIt/"
     if oscar:
         path = "/users/dheffren/data/dheffren/ChangeIt/"
+    #this method screws up the colors of the image. 
     categoryFrames = loadCategoryAnnotated("apple", path, desiredSize)
     print("category frames shape: ", categoryFrames.shape)
     numVideos = categoryFrames.shape[0]
     print("number of videos to process: ", numVideos)
     #still need to save these points because can't display in oscar.
-
+   
     points = generateRandomPoints(numVideos, numPoints, finalSize)
     resultPoints = callDift(categoryFrames, points)
     for i in range(numVideos):
@@ -96,5 +97,5 @@ def loadAndDisplay():
         beginningImage, endImage = loadImages(str(i), False)
         results = loadResults(str(i), False)
         displayImages(beginningImage, endImage, points, results)
-#diftChange(True)
-loadAndDisplay()
+diftChange(False)
+#loadAndDisplay()

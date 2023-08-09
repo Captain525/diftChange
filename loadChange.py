@@ -2,11 +2,11 @@ import yt_dlp
 import pandas as pd
 import os
 import numpy as np
-
 from multiprocessing.pool import Pool
 import cv2
 from functools import partial
 import math
+from PIL import Image
 
 def loadChangeIt(oscar):
     """
@@ -45,6 +45,7 @@ def loadCategoryAnnotated(category, path, desiredSize):
         if valid: 
             videoLink = preset + video[0:-9]
             frames = processVideoSimple(videoLink, indices, desiredSize)
+            
             if frames is not None:
                 listFrames.append(frames)
                 count+=1
@@ -94,8 +95,9 @@ def processVideoSimple(link, indices, desiredSize):
                         #(480 x 270 y)
                         #changes it to y then x. 
                         image  = cv2.resize(frame, desiredSize)
-                        frameValue = np.array(image, np.uint8)
-                        listFrames.append(frameValue)
+                        imageColorChanged = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                        
+                        listFrames.append(imageColorChanged)
                     count = count+1
                 if unattained:
                     raise Exception("Couldn't find a viable frame")
