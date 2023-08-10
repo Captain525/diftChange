@@ -7,6 +7,7 @@ import cv2
 from functools import partial
 import math
 from PIL import Image
+from imageDisplay import displayFrames
 
 def loadChangeIt(oscar):
     """
@@ -37,16 +38,19 @@ def loadCategoryAnnotated(category, path, desiredSize):
     listFrames = []
     count = 0
     for video in listFilesAnnotated:
-        print("count: ", count)
-        if count>=5:
-            break
+        #print("count: ", count)
+        #if count>=5:
+           # break
         print("video: ", video)
-        indices, valid = loadAndProcessAnnotations(link+ "/" + video)
+        #should i exclude videos without all 3? 
+        indices, valid = loadAndProcessAnnotationsMiddle(link+ "/" + video)
         if valid: 
             videoLink = preset + video[0:-9]
+            #extracts those indices from the video. 
             frames = processVideoSimple(videoLink, indices, desiredSize)
             
             if frames is not None:
+                displayFrames(frames)
                 listFrames.append(frames)
                 count+=1
     print("numframes: ", len(listFrames))
@@ -56,6 +60,12 @@ def loadCategoryAnnotated(category, path, desiredSize):
 def processVideoSimple(link, indices, desiredSize):
     """
     Simpler version without threading, extracts the indices from the video. 
+    WANT NOT JUST THE FIRST FRAME FROM EACH SECOND< PICK THE MIDDLE FRAME. 
+
+    Annotation starts at 0 so to get the beginning of the desired second specified by 
+    indices, do fps*indices
+
+
     """
     print("begin process info")
     try:
@@ -67,9 +77,11 @@ def processVideoSimple(link, indices, desiredSize):
         print("YOUTUBE DOWNLOAD FAILED")
         return None
     print("done that part. ")
+    formatList = ['720p', '480p', '360p', '144p']
+    #maybe try a specific format. 
     for f in formats:
         #pick a format, initially was 144p
-        if f.get('format_note', None)=='720p':
+        if f.get('format_note', None) in formatList:
             print("in format")
             url = f.get('url', None)
             cap = cv2.VideoCapture(url)
@@ -77,14 +89,17 @@ def processVideoSimple(link, indices, desiredSize):
             #indices in which second the frame occurs in. 
             #hould get the FIRST frame in each interval, if want something else, change it. 
             frameForEach = fps*indices
-            cap.set(cv2.CAP_PROP_POS_FRAMES, frameForEach[0])
             listFrames = []
             for i in range(3):
                 print("i is : ", i)
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frameForEach[i])
+                #leftmost middle frame of the given second. 
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frameForEach[i] + fps//2)
+                """
                 unattained = True
                 count = 0
+                
                 #only stay within the second. 
+                originalFrame = None
                 while unattained and count<fps:
                     ret, frame = cap.read()
                     print(frame)
@@ -101,9 +116,18 @@ def processVideoSimple(link, indices, desiredSize):
                     count = count+1
                 if unattained:
                     raise Exception("Couldn't find a viable frame")
+                """
+                #want this block to assuem teh first frame alwasy works. 
+                ret, frame = cap.read()
+                if not ret:
+                    raise Exception("Frame didn't work")
+                image  = cv2.resize(frame, desiredSize)
+                imageColorChanged = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)   
+                listFrames.append(imageColorChanged)
             frames = np.stack(listFrames)
             print("frames shape: ", frames.shape)
             return frames
+        #need way to find other formats once we're done with 720p
     print("Failed video format")
     return None
 
@@ -134,6 +158,77 @@ def loadAndProcessAnnotations(csvLink):
     if -1 in indices:
         valid = False
     return indices, valid
+def loadAndProcessAnnotationsMiddle(csvLink):
+    """
+    Picks middle occurence of each state (continuous display). 
+
+    Should we assume labels are in ONE continuous, ie 2 never repeats once its done? 
+    If not, which one do we pick? First, or the one that occurs in the right order? 
+    DOESN't. SECOND APPLE goes 3 2 3. Dont want to average because that'd be a frame in the 2. 
+    Should we go 1 then 3? 
+
+    Chooses the left middle of the first contiguous section of each category. 
+    Maybe should preserve locality? Choose the close ones? 
+
+    care about actions? 
+    """
+    #0 = nothing 1= initial 2 = action 3 = final. 
+    annotationCSV = pd.read_csv(csvLink)
+    listAnnotations = annotationCSV.iloc(axis=1)[1].values.tolist()
+    print("list annotations: ", listAnnotations)
+    indices = -1*np.ones(shape = (3,), dtype=int)
+    rightMost = False
+    for i in range(3):
+        try:
+            #if the given index doesn't exist in the labels, give it a dne. 
+            index = listAnnotations.index(i+1)
+            print("index for {}: {}".format(i+1, index))
+            #if this does exist, want this CONTIGUOUS stretch of frames, and to find the middle.
+            newArrayDiff = np.diff(listAnnotations[index:])
+            #starts with 0s until end
+            #where is the change. List indices in order of where it isn't 0. 
+            #gets first where there is a difference. 
+            endIndex = np.nonzero(newArrayDiff !=0)[0][0]
+            print("endIndex: ", endIndex)
+            #if first index is nonzero, means there was just ONE. 
+        
+            #to get the leftmost, take (endIndex)//2, rightmost endIndex + 1//2
+            indexChoice = (endIndex+ int(rightMost))//2
+            print("index choice: ", indexChoice)
+            #choose rightmost value in the middle 2. 
+            #indexChoice = (endIndex + 1)/2
+            chosenIndex = index + indexChoice
+            print("chosen index: ", chosenIndex)
+            indices[i] = chosenIndex
+        except:
+            print("label: ", i+1, " dne")
+    valid = True
+    if indices[1] ==-1:
+        print("got in this area")
+        indices[1] == indices[0]
+
+    if indices[0] == -1 or indices[2]==-1:
+        valid = False
+    return indices, valid
+def loadAndProcessAnnotationsEnforceTemporal(csvLink):
+    """
+    Enforce the fact that we need initial state -> action -> end state. 
+    """
+    annotationCSV = pd.read_csv(csvLink)
+    listAnnotations = annotationCSV.iloc(axis=1)[1].values.tolist()
+    print("list annotations: ", listAnnotations)
+    indices = -1*np.ones(shape = (3,), dtype=int)
+    rightMost = False
+
+    #check initial first. 
+    try:
+        #deal with this contiguous segment. 
+        initIndex = listAnnotations.index(1)
+        
+        #
+
+    except:
+        print("labels don't work")
 def loadCenteringParams(path):
     """
     Loads centering parameters and list of categories as lists. 

@@ -35,6 +35,25 @@ def convertPIL(imageArray, img_size):
     image = Image.fromarray(np.uint8(imageArray), "RGB")
     image = image.resize((img_size, img_size))
     return image
+def displayFrames(frames):
+    """
+    Displays the three extracted frames from all the frames. 
 
+    """
+    fig_size = 3
+    scatter_size = 70
+    fig, axes = plt.subplots(1, 3, figsize=(3*fig_size, fig_size))
+
+    plt.tight_layout()
+    for i in range(3):
+            axes[i].imshow(convertPIL(frames[i], 768))
+            axes[i].axis('off')
+            if i == 0:
+                axes[i].set_title('init image')
+            elif i==1:
+                 axes[i].set_title('action image')
+            else:
+                axes[i].set_title('target image')
+    plt.show()
 def makeIntoImageAndDisplay(frame):
      Image.show(frame)

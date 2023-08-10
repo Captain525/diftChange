@@ -1,2 +1,11 @@
 Goal: Use dift with change it dataset to see correspondence. 
 Use prelabeled data. 
+
+
+
+
+Things to do: 
+work on format
+finding which frames to do, choosing with constraint. 
+download video instead? 
+get lots of results, want to see if it works in the MACRO sense. 

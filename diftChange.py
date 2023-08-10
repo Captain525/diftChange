@@ -12,7 +12,7 @@ def diftChange(oscar):
 
     dift project has images in 270 x 480 but ocnverts them to 768 x 768. DOes this in the diffusion call. Need to generate points in the final size. 
     """
-    numPoints = 10 
+    numPoints = 100
     #x,y
     desiredSize = (480, 270)
     finalSize = (768, 768)
