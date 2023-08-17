@@ -47,7 +47,7 @@ def loadCategoryAnnotated(category, path, desiredSize):
         if valid: 
             videoLink = preset + video[0:-9]
             #extracts those indices from the video. 
-            frames = processVideoSimple(videoLink, indices, desiredSize)
+            frames = processVideoSimpleNoLoop(videoLink, indices, desiredSize)
             
             if frames is not None:
                 displayFrames(frames)
@@ -130,9 +130,54 @@ def processVideoSimple(link, indices, desiredSize):
         #need way to find other formats once we're done with 720p
     print("Failed video format")
     return None
+def processVideoSimpleNoLoop(link, indices, desiredSize):
+    try:
+        ydl_opts = {}
+        ydl = yt_dlp.YoutubeDL(ydl_opts)
+        info_dict = ydl.extract_info(link, download=False)
+        formats = info_dict.get('formats', None)
+    except:
+        print("YOUTUBE DOWNLOAD FAILED")
+        return None
+    formatList = ['720p', '480p', '144p']
+    for format in formatList:
+        frames = processVideoHelper(format, formats, indices, desiredSize)
+        if frames is not None:
+            print("returning resolution: ", format)
+            return frames
+    print("Operation failed, no valid formats")
+    return None
 
-
-            
+def processVideoHelper(formatName, formats, indices, desiredSize):
+    for f in formats:
+        if f.get('format_note', None)== formatName:
+            print("in format: ", formatName)
+            #fps varies with resolution. 
+            url = f.get('url', None)
+            cap = cv2.VideoCapture(url)
+            print("post capture")
+            fps = int(cap.get(cv2.CAP_PROP_FPS))    
+            #indices in which second the frame occurs in. 
+            #should get the FIRST frame in each interval. 
+            frameForEach = fps*indices
+            listFrames = []
+            for i in range(3):
+                #leftmost frame of mmiddle second. 
+                print("pre set cap")
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frameForEach[i] + fps//2)
+                print("pre read")
+                ret, frame = cap.read()
+                print("post read")
+                if not ret:
+                    raise Exception("Frame didn't work")
+                image  = cv2.resize(frame, desiredSize)
+                imageColorChanged = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)   
+                listFrames.append(imageColorChanged)
+            frames = np.stack(listFrames, dtype= np.uint8)
+            print("frames shape: ", frames.shape)
+            return frames
+    print("no format of type: ", formatName)
+    return None
 def loadAndProcessAnnotations(csvLink):
     """
 
