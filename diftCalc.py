@@ -11,7 +11,7 @@ def callDift(frames, points):
     """
     Frames size: 
     y, then x. 
-    numVideos x 3 x desiredSize[1] x desiredSize[0] x 3
+    numVideos x numFrames x desiredSize[1] x desiredSize[0] x 3
     points is numVideos x numPoints x 2
     """
     torch.cuda.set_device(0)

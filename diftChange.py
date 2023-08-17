@@ -2,7 +2,7 @@
 from loadChange import *
 from diftCalc import callDift
 from imageDisplay import displayImages, convertPIL
-from dataTransfer import saveImages, loadImages, loadPoints, loadResults
+from dataTransfer import *
 def diftChange(oscar):
     """
     Pipeline steps: 
@@ -13,49 +13,24 @@ def diftChange(oscar):
     dift project has images in 270 x 480 but ocnverts them to 768 x 768. DOes this in the diffusion call. Need to generate points in the final size. 
     """
     numPoints = 100
-    #x,y
     desiredSize = (480, 270)
     finalSize = (768, 768)
-    path =   "/mnt/c/Users/dheff/CodingProjects/PythonProjects/PALM Research/data/ChangeIt/"
-    if oscar:
-        path = "/users/dheffren/data/dheffren/ChangeIt/"
-    #this method screws up the colors of the image. 
-    categoryFrames = loadCategoryAnnotated("apple", path, desiredSize)
-    print("category frames shape: ", categoryFrames.shape)
-    numVideos = categoryFrames.shape[0]
+    path = getPathChange(oscar)
+    #this method screws up the colors of the image.
+    params, catList = loadCenteringParams(path)
+    listCatFrames = []
+    for cat in catList:
+        frame = loadFramesPreDownloaded(cat, path, desiredSize)
+        listCatFrames.append(frame)
+    frames = np.vstack(listCatFrames)
+    print("category frames shape: ", frames.shape)
+    numVideos = frames.shape[0]
     print("number of videos to process: ", numVideos)
     #still need to save these points because can't display in oscar.
    
     points = generateRandomPoints(numVideos, numPoints, finalSize)
-    resultPoints = callDift(categoryFrames, points)
-    for i in range(numVideos):
-
-        beginningImage = convertPIL(categoryFrames[i, 0], finalSize[0])
-        endImage = convertPIL(categoryFrames[i, 2], finalSize[0])
-        saveImages(str(i), beginningImage, endImage, True)
-        displayImages(beginningImage, endImage, points[i], resultPoints[i])
-def diftChangeOneVideo(oscar):
-    numPoints = 10
-    #x,y
-    desiredSize = (480, 270)
-    category = "apple"
-    path =   "/mnt/c/Users/dheff/CodingProjects/PythonProjects/PALM Research/data/ChangeIt/"
-    if oscar:
-       path = "/users/dheffren/data/dheffren/ChangeIt/"
-    preset = "https://www.youtube.com/watch?v="
-    videoChoice = "8AK0JQkaQpE.fps1.csv"
-    link = path + "annotations/" + category
-    print("video: ", videoChoice)
-    indices, valid = loadAndProcessAnnotations(link+ "/" + videoChoice)
-    if valid: 
-        videoLink = preset + videoChoice[0:-9]
-        frames = processVideoSimple(videoLink, indices)
-    else:
-        raise Exception("invalid choice")
-    points = generateRandomPoints(1, numPoints, desiredSize)
-
-
-
+    #gets results and saves them. 
+    resultPoints = callDift(frames, points)
 def generateRandomPoints(numVideos, numPoints, desiredSize):
     """
     Videos shape: numVideos x 3 x desiredSize[0] x desiredSize[1] x 3
