@@ -5,12 +5,4 @@ Use prelabeled data.
 
 
 Things to do: 
-work on format
-finding which frames to do, choosing with constraint. 
-download video instead? 
-get lots of results, want to see if it works in the MACRO sense. 
-
-
-
-NOTES: 
-In final product/ in the future, download the videos then do things with them. 
+WORK ON SAVING AND LOADING IMAGES AND POINTS AND WHERE THEY GO, UPDATE THE SAVED RESULT FILENAMES TO MATCH NEW THINGS.TEST ON OSCAR. 

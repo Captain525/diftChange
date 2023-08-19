@@ -48,15 +48,24 @@ def videoPath(name, oscar=True):
     return downloadPath
 def video(path, name):
     return path + "annotatedVideos/" + name+ ".mp4"
-def saveListDownloaded(listNames, oscar):
+def getAnnotationPath(link, category, oscar):
+    path = getPathChange(oscar)
+    return path + "annotations/" + category + "/" + link + ".fps1.csv"
+def saveListDownloaded(listNames,listLinks, oscar):
     path = getPathChange(oscar)
     fileName = "listDownloaded"
     with open(path + fileName,"w") as f:
-        f.writelines([name + "\n" for name in listNames])
+        for i in range(len(listNames)):
+            f.write("{},{}\n".format(listNames[i], listLinks[i]))
 def loadListDownloaded(oscar):
     path = getPathChange(oscar)
     fileName = "listDownloaded"
     with open(path + fileName, "r") as f:
-        names = [name.replace("\n", "") for name in f.readlines() ]
+        nameLinks = [(video.replace("\n","").split(",")[0], video.replace("\n","").split(",")[1])for video in f.readlines()]
+    names, links = zip(*nameLinks)
+    nameList = list(names)
+    linkList = list(links)
+    print(nameLinks)
     print(names)
-    return names
+    print(links)
+    return nameList, linkList

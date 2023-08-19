@@ -15,14 +15,7 @@ def diftChange(oscar):
     numPoints = 100
     desiredSize = (480, 270)
     finalSize = (768, 768)
-    path = getPathChange(oscar)
-    #this method screws up the colors of the image.
-    params, catList = loadCenteringParams(path)
-    listCatFrames = []
-    for cat in catList:
-        frame = loadFramesPreDownloaded(cat, path, desiredSize)
-        listCatFrames.append(frame)
-    frames = np.vstack(listCatFrames)
+    frames = loadFramesPreDownloaded(desiredSize, oscar)
     print("category frames shape: ", frames.shape)
     numVideos = frames.shape[0]
     print("number of videos to process: ", numVideos)
@@ -53,15 +46,15 @@ def generateRandomPoints(numVideos, numPoints, desiredSize):
         randPoints = uniqueArr[1:numPoints+1]
         #not sure if x and y coords are right. 
         #.astype should round down if working as intended for first one. 
-        print("divided: ", randPoints/desiredSize[0])
+        #print("divided: ", randPoints/desiredSize[0])
         #correct here. 
         xCoord = (randPoints/desiredSize[0]).astype(int)
-        print("x coord: ", xCoord)
+        #print("x coord: ", xCoord)
         #.astype shouldnt' round at all here. 
         #correct here. 
         yCoord = (randPoints%desiredSize[1]).astype(int)
         coords = np.stack([xCoord,yCoord]).T
-        print("coords shape: ", coords.shape)
+        #print("coords shape: ", coords.shape)
         assert(coords.shape == (numPoints, 2))
         listPoints.append(coords)
     return np.stack(listPoints, dtype = int)

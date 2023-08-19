@@ -11,10 +11,13 @@ def downloadVideos(oscar):
     path = getPathChange(oscar)
     centeringParams, categories = loadCenteringParams(path)
     listDownloaded = []
+    listLinks = []
     for category in categories:
-        listDownloadedCat = loadCategoryDownload(path, category)
+        listDownloadedCat, listDownloadedLinks = loadCategoryDownload(path, category)
         listDownloaded+=listDownloadedCat
-    saveListDownloaded(listDownloaded, oscar)
+        listLinks +=listDownloadedLinks
+        break
+    saveListDownloaded(listDownloaded,listLinks, oscar)
 
 def loadCategoryDownload(path, category):
     link = path + "annotations/" + category
@@ -22,12 +25,16 @@ def loadCategoryDownload(path, category):
     preset = "https://www.youtube.com/watch?v="
     count = 0
     listDownloaded = []
+    listLinks = []
     for count in range(len(listFilesAnnotated)):
         video = listFilesAnnotated[count]
-        videoDownloaded, name = downloadVideo(preset + video, path, category, count)
+        #get rid of .fps1.csv
+        videoLink = video[:-9]
+        videoDownloaded, name = downloadVideo(preset + videoLink, path, category, count)
         if videoDownloaded:
             listDownloaded.append(name)
-    return listDownloaded
+            listLinks.append(videoLink)
+    return listDownloaded, listLinks
 def downloadVideo(link, path, category, count):
     downloadPath = path + "annotatedVideos/"
     name = "{cat}{num}".format(cat = category, num = count)
@@ -50,3 +57,4 @@ def loadCenteringParams(path):
     centeringParams = categoryCSV.loc[:, "CENTERING_PARAM"].values
     catList = categoryCSV.loc[:, "DIR_NAME"].values
     return centeringParams, catList
+downloadVideos(False)
