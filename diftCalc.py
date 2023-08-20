@@ -81,10 +81,11 @@ def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, b
     print("Time Upsampling: {} seconds".format(endUp-startUp))
     del features
     endPoints = np.zeros_like(beginningPoints, dtype = np.uint16)
+    startProd = time.time()
     for i in range(numPoints):
         x = beginningPoints[i, 0]
         y = beginningPoints[i, 1]
-        startProd = time.time()
+        
         #not sure how to vectorize this.
         beginningFeatureVector = beginningFeaturesImage[0, :, y, x].view(1, numChannels, 1, 1)
         cosMap = cos(beginningFeatureVector, endFeaturesImage).cpu().numpy()
@@ -97,8 +98,8 @@ def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, b
         maxY = max_yx[0].item()
         endPoints[i, 0] = maxX
         endPoints[i, 1] = maxY
-        endProd = time.time()
-        print("Time inner for calc: {} seconds".format(endProd-startProd))
+        
+        
         #print("beginning coords: ", x, y)
         #print("max coords(x,y): ", maxX, maxY)
         #print("Max value: ", maxValue)
@@ -109,6 +110,8 @@ def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, b
     del endFeaturesImage
     gc.collect()
     torch.cuda.empty_cache()
+    endProd = time.time()
+    print("Time inner for calc: {} seconds".format(endProd-startProd))
     return endPoints
 def diffusionCalc(dift, listFrames, listPrompts, sizeNetwork):
     """
