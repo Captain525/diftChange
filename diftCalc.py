@@ -4,15 +4,14 @@ from torchvision.transforms import PILToTensor
 from src.models.dift_sd import SDFeaturizer
 import numpy as np
 import torch.nn as nn
-from src.models.dift_sd import SDFeaturizer
-from imageDisplay import displayImages, convertPIL
+from imageDisplay import convertPIL
 from dataTransfer import saveResults, savePoints
-def callDift(frames, points):
+def callDift(frames, points, names, oscar=True):
     """
-    Frames size: 
-    y, then x. 
+    Does all the dift calculations and operations on the frames to get the result points. 
     numVideos x numFrames x desiredSize[1] x desiredSize[0] x 3
     points is numVideos x numPoints x 2
+    First in numFrames is the point frame, others are inference frames. 
     """
     torch.cuda.set_device(0)
     #use default model weights. 
@@ -20,24 +19,37 @@ def callDift(frames, points):
     sizeNetwork = 768
     sizeFinal = 768
     listResultPoints = []
+    #for each video. 
     for i in range(frames.shape[0]):
         frame = frames[i]
-        beginningFrame = frame[0]
-        endFrame = frame[2]
+        name = names[i]
         pointsFrame = points[i]
+        #checking it isn't JUST the beginning frame. 
+        assert(frame.shape[0]>1)
+        beginningFrame = frame[0]
+        #frames we want to run the matching algorithm on. 
+        otherFrames = frame[1:]
+        
+        #save the points. Would have to combine this with saveResults if we implemented TODO in diftChange. 
+        savePoints(pointsFrame, name, oscar)
         #maybe add prompt later. 
-        matchedArrayPoints = doMatching(dift, beginningFrame, endFrame, "", sizeFinal, sizeNetwork, pointsFrame)
-        print("matched array points size: ", matchedArrayPoints.shape)
-        listResultPoints.append(matchedArrayPoints)
-        #fix this. 
-        savePoints(pointsFrame, str(i), True)
-        saveResults(matchedArrayPoints, str(i), True)
+        #hopefully this loop is fast enough of a way to do it.
+        listMatched = [] 
+        for j in range(otherFrames.shape[0]):
+            inferenceFrame = otherFrames[j]
+            matchedArrayPoints = doMatching(dift, beginningFrame, inferenceFrame, "", sizeFinal, sizeNetwork, pointsFrame)
+            listMatched.append(matchedArrayPoints)
+        frameMatched = np.stack(listMatched, dtype = np.uint8)
+        print("frameMatched size: ", frameMatched.shape)
+        listResultPoints.append(frameMatched)
+        saveResults(matchedArrayPoints, name, oscar)
     arrayPoints = np.stack(listResultPoints)
+    print("size of array points: ", arrayPoints.shape)
     return arrayPoints
 def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, beginningPoints):
     """
-    takes in the beginning and end frames and the dift model and does the matching as desired. 
-    BeginningPoints are numPOints by 2, x, y
+    Takes in the beginning frame and one of the inference frames and does the calculations on them. 
+    This basically is the same as it was before changing for multiple inference frames, just call on each individually. 
     """
     #get features to do interesting stuff with. 
     cos = nn.CosineSimilarity(dim=1)

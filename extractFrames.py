@@ -53,6 +53,7 @@ def extractFrame(frameNumber, cap, desiredSize):
         #extractFrame(frameNumber + 1, cap, desiredSize, max)
         raise Exception("Extracting frame didn't work")
     image = cv2.resize(frame, desiredSize)
+    #gets rid of BGR Problem. 
     imageColorChanged=  cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return imageColorChanged
 

@@ -1,8 +1,9 @@
 
-from loadChange import *
+import numpy as np
+from loadChange import loadFramesPreDownloaded
 from diftCalc import callDift
-from imageDisplay import displayImages, convertPIL
-from dataTransfer import *
+from dataTransfer import loadListDownloaded
+
 def diftChange(oscar):
     """
     Pipeline steps: 
@@ -10,24 +11,30 @@ def diftChange(oscar):
     2. generate random points for each initial state. 
     3. run dift algorithm. 
 
-    dift project has images in 270 x 480 but ocnverts them to 768 x 768. DOes this in the diffusion call. Need to generate points in the final size. 
+    dift project has images in 270 x 480 but ocnverts them to 768 x 768. DOes this in the diffusion call. Need to generate points in the final size.
+
+    THis is the main method, does everything once the videos are downloaded. Call this with a gpu. 
     """
     numPoints = 100
     desiredSize = (480, 270)
     finalSize = (768, 768)
-    frames = loadFramesPreDownloaded(desiredSize, oscar)
+    #load the list of downloaded files names and the list of links to those files on youtube. 
+    listDownloaded, listLinks = loadListDownloaded(oscar)
+    #load the frames from the predownloaded videos. 
+    frames = loadFramesPreDownloaded(listDownloaded, listLinks,desiredSize, oscar)
     print("category frames shape: ", frames.shape)
     numVideos = frames.shape[0]
     print("number of videos to process: ", numVideos)
     #still need to save these points because can't display in oscar.
-   
     points = generateRandomPoints(numVideos, numPoints, finalSize)
     #gets results and saves them. 
-    resultPoints = callDift(frames, points)
+    resultPoints = callDift(frames, points, listDownloaded, oscar)
+    print("results shape: ", resultPoints.shape)
+    
 def generateRandomPoints(numVideos, numPoints, desiredSize):
     """
     Videos shape: numVideos x 3 x desiredSize[0] x desiredSize[1] x 3
-    HOWEVER: Need to generate random points in the range of the final image size. 
+    Should I move this method somewhere else? 
     """
 
     #uniform points but no repeats. generate random in each direction but need a way to check and regenerate. 
@@ -58,12 +65,6 @@ def generateRandomPoints(numVideos, numPoints, desiredSize):
         assert(coords.shape == (numPoints, 2))
         listPoints.append(coords)
     return np.stack(listPoints, dtype = int)
-def loadAndDisplay():
-    num_images = 5
-    for i in range(num_images):
-        points = loadPoints(str(i), False)
-        beginningImage, endImage = loadImages(str(i), False)
-        results = loadResults(str(i), False)
-        displayImages(beginningImage, endImage, points, results)
+
 diftChange(False)
 #loadAndDisplay()

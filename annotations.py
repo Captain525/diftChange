@@ -7,11 +7,10 @@ of choosing valid indices.
 """
 def annotations(name, link, oscar):
     """
-    CHECK THIS. 
+    This works now, gets the annotations for a given name. Name in form categoryNumber
     """
     #is alpha gets only letters. This method gets rid of numbers at the end of the name. 
     category = "".join(list([val for val in name if val.isalpha()]))
-    print("category: ", category)
     annotationFileName = getAnnotationPath(link, category, oscar)
     return loadAnnotations(annotationFileName)
     
