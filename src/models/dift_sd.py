@@ -180,11 +180,11 @@ class OneStepSDPipeline(StableDiffusionPipeline):
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None
     ):
-        print("got to one step pipeline")
+        #print("got to one step pipeline")
         device = self._execution_device
         #Encode image tensor into latent space, variational autoencoder means there's randomness. 
         latents = self.vae.encode(img_tensor).latent_dist.sample() * self.vae.config.scaling_factor
-        print("latents size: ", latents.shape)
+        #print("latents size: ", latents.shape)
         #convert t to tensor. 
         t = torch.tensor(t, dtype=torch.long, device=device)
         #noise like the latents array. 

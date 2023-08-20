@@ -3,10 +3,10 @@ import numpy as np
 from PIL import Image
 import os
 def savePoints(points, name, oscar=False):
-    link = getPathGlobData(oscar)
+    link = getPathGlobResults(oscar)
     np.save(link + "diftChange/Points/" + name, points)
 def loadPoints(name, oscar=False):
-    link = getPathGlobData(oscar)
+    link = getPathGlobResults(oscar)
     clicksArray = np.load(link + "diftChange/Points/" + name + ".npy")
     return clicksArray
 def saveResults(results, name, oscar=True):
@@ -17,18 +17,18 @@ def loadResults(name, oscar=False):
     clicksArray = np.load( link + "diftChange/Results/"+ name + ".npy")
     return clicksArray
 def saveFrames(frames, name, oscar):
-    path = getPathGlobData(oscar)
+    path = getPathGlobResults(oscar)
     np.save(path + "diftChange/Frames/" + name + ".npy", frames)
 def loadFrames(name, oscar):
-    path = getPathGlobData(oscar)
+    path = getPathGlobResults(oscar)
     frames = np.load(path + "diftChange/Frames/" + name + ".npy")
     return frames
 def saveImages(name, beginImage, endImage, oscar=False):
-    link = getPathGlobData(oscar)
+    link = getPathGlobResults(oscar)
     beginImage.save(link + "/diftChange/Images/" + "begin" + name + ".jpg")
     endImage.save(link + "/diftChange/Images/"+ "end" + name + ".jpg")  
 def loadImages(name, oscar=False):
-    link = getPathGlobData(oscar)
+    link = getPathGlobResults(oscar)
     beginImage = Image.open(link + "/diftChange/Images/" + "begin" + name + ".jpg")
     endImage = Image.open(link + "/diftChange/Images/"+ "end" + name + ".jpg")
     return beginImage, endImage
@@ -38,6 +38,7 @@ def getPathGlobResults(oscar = True):
         link = "/users/dheffren/scratch/"
     return link
 def getPathGlobData(oscar):
+    #not used rn, storing everything from oscar in scratch. 
     link = "/mnt/c/Users/dheff/CodingProjects/PythonProjects/PALM Research/GlobusData/"  
     if oscar:
        link = "/users/dheffren/data/dheffren/" 

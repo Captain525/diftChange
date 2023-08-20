@@ -4,8 +4,9 @@ from torchvision.transforms import PILToTensor
 from src.models.dift_sd import SDFeaturizer
 import numpy as np
 import torch.nn as nn
+import time
 from imageDisplay import convertPIL
-from dataTransfer import saveResults, savePoints
+from dataTransfer import saveResults, savePoints, saveFrames
 def callDift(frames, points, names, oscar=True):
     """
     Does all the dift calculations and operations on the frames to get the result points. 
@@ -21,6 +22,7 @@ def callDift(frames, points, names, oscar=True):
     listResultPoints = []
     #for each video. 
     for i in range(frames.shape[0]):
+        print("Video {}/{}".format(i+1, frames.shape[0]))
         frame = frames[i]
         name = names[i]
         pointsFrame = points[i]
@@ -29,22 +31,27 @@ def callDift(frames, points, names, oscar=True):
         beginningFrame = frame[0]
         #frames we want to run the matching algorithm on. 
         otherFrames = frame[1:]
-        
-        #save the points. Would have to combine this with saveResults if we implemented TODO in diftChange. 
-        savePoints(pointsFrame, name, oscar)
+        print("other frames shape: ", otherFrames.shape)
         #maybe add prompt later. 
         #hopefully this loop is fast enough of a way to do it.
         listMatched = [] 
         for j in range(otherFrames.shape[0]):
+            print("Step: ", str(j))
             inferenceFrame = otherFrames[j]
             matchedArrayPoints = doMatching(dift, beginningFrame, inferenceFrame, "", sizeFinal, sizeNetwork, pointsFrame)
             listMatched.append(matchedArrayPoints)
-        frameMatched = np.stack(listMatched, dtype = np.uint8)
+        frameMatched = np.stack(listMatched, dtype = np.uint16)
         print("frameMatched size: ", frameMatched.shape)
         listResultPoints.append(frameMatched)
+
+        #SAVE EVERYTHING ONCE DONE SO KNOW IT'S VALID. 
+        
+        #save Frames. 
+        saveFrames(frame, name, oscar)
+        #save the points. Would have to combine this with saveResults if we implemented TODO in diftChange. 
+        savePoints(pointsFrame, name, oscar)
         saveResults(matchedArrayPoints, name, oscar)
     arrayPoints = np.stack(listResultPoints)
-    print("size of array points: ", arrayPoints.shape)
     return arrayPoints
 def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, beginningPoints):
     """
@@ -55,27 +62,33 @@ def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, b
     cos = nn.CosineSimilarity(dim=1)
     numPoints = beginningPoints.shape[0]
     #use sizeNetwork for diffusion calculation. 
+    startCalc = time.time()
     features = diffusionCalc(dift, [beginningFrame, endFrame], [prompt, prompt], sizeNetwork)
+    endCalc = time.time()
+    print("Time Calculate Features: {} seconds".format(endCalc-startCalc))
     numChannels = features.shape[1]
     #1 x channelDepth x imgHeightDif ximgWidthDif
     #upsample feature map until it has the dimensions of the image we desire. 
     #will definitely increase in size. this is likely to be a place where size effects the results. 
-    
+    startUp = time.time()
     #get these upsampled feature sizes with sizeFinal. 
     beginningFeaturesImage = nn.Upsample(sizeFinal, mode='bilinear')(features[0].unsqueeze(0))
     
     #don't need to unsqueeze with colon
     endFeaturesImage = nn.Upsample(sizeFinal, mode = "bilinear")(features[1:])
+    endUp = time.time()
+    print("Time Upsampling: {} seconds".format(endUp-startUp))
     del features
-    endPoints = np.zeros_like(beginningPoints)
+    endPoints = np.zeros_like(beginningPoints, dtype = np.uint16)
     for i in range(numPoints):
         x = beginningPoints[i, 0]
         y = beginningPoints[i, 1]
+        startProd = time.time()
         #not sure how to vectorize this.
         beginningFeatureVector = beginningFeaturesImage[0, :, y, x].view(1, numChannels, 1, 1)
         cosMap = cos(beginningFeatureVector, endFeaturesImage).cpu().numpy()
         del beginningFeatureVector
-        print("shape cos map: ", cosMap.shape)
+        #print("shape cos map: ", cosMap.shape)
         maxValue = cosMap[0].max()
         max_yx = np.unravel_index(cosMap[0].argmax(), cosMap[0].shape)
         del cosMap
@@ -83,9 +96,11 @@ def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, b
         maxY = max_yx[0].item()
         endPoints[i, 0] = maxX
         endPoints[i, 1] = maxY
-        print("beginning coords: ", x, y)
-        print("max coords(x,y): ", maxX, maxY)
-        print("Max value: ", maxValue)
+        endProd = time.time()
+        print("Time inner for calc: {} seconds".format(endProd-startProd))
+        #print("beginning coords: ", x, y)
+        #print("max coords(x,y): ", maxX, maxY)
+        #print("Max value: ", maxValue)
         gc.collect()
         torch.cuda.empty_cache()
     #now, want to pick out the point we wish to cosine with the end features. But want to do multiple points. 
@@ -110,7 +125,7 @@ def diffusionCalc(dift, listFrames, listPrompts, sizeNetwork):
             #go from 0, 256 -> 0, 1 then go to -1, 1
             #Somewhere here it automatically formats the axes to be correct for input to the model. 
             img_tensor = (PILToTensor()(image) / 255.0 - 0.5) * 2
-            print("image size: ", img_tensor.shape)
+            #print("image size: ", img_tensor.shape)
             #gets the latents for a given step. 
             #up_ft_index is which upsampling block to choose from to get your learned features and such. 
             del image

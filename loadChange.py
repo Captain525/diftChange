@@ -1,6 +1,6 @@
 import numpy as np
 from imageDisplay import displayFrames
-from dataTransfer import videoPath
+from dataTransfer import videoPath, saveFrames
 from extractFrames import extractFrames
 from annotations import  annotations
         
@@ -18,7 +18,7 @@ def loadFramesPreDownloaded(listDownloaded, listLinks, desiredSize, oscar):
     #can use some condition with count. 
     for i in range(len(listDownloaded)):
         #optional parameter to limit number of videos. Used mostly for testing. 
-        if count>5:
+        if count>2:
             break
         name = listDownloaded[i]
         link = listLinks[i]
@@ -29,8 +29,7 @@ def loadFramesPreDownloaded(listDownloaded, listLinks, desiredSize, oscar):
             #get the annotation frames from the downloaded video. 
             frames = extractFrames(videoPath(name, oscar), indices, desiredSize)
             if frames is not None:
-                #could save the frames here to use for later. 
-                displayFrames(frames)
+                #Save the frames in diftCalc method. 
                 listFrames.append(frames)
                 count+=1
     return np.stack(listFrames, dtype=np.uint8)

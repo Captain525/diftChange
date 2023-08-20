@@ -16,7 +16,6 @@ def downloadVideos(oscar):
         listDownloadedCat, listDownloadedLinks = loadCategoryDownload(path, category)
         listDownloaded+=listDownloadedCat
         listLinks +=listDownloadedLinks
-        break
     saveListDownloaded(listDownloaded,listLinks, oscar)
 
 def loadCategoryDownload(path, category):
@@ -29,6 +28,7 @@ def loadCategoryDownload(path, category):
     for count in range(len(listFilesAnnotated)):
         video = listFilesAnnotated[count]
         #get rid of .fps1.csv
+        #how did it work before this??? Maybe automatically ignores the extra stuff. 
         videoLink = video[:-9]
         videoDownloaded, name = downloadVideo(preset + videoLink, path, category, count)
         if videoDownloaded:
@@ -57,4 +57,6 @@ def loadCenteringParams(path):
     centeringParams = categoryCSV.loc[:, "CENTERING_PARAM"].values
     catList = categoryCSV.loc[:, "DIR_NAME"].values
     return centeringParams, catList
-downloadVideos(False)
+#downloadVideos(True)
+#639 videos downloaded. 
+#print(len(loadListDownloaded(True)[0]))

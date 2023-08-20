@@ -22,6 +22,7 @@ def diftChange(oscar):
     listDownloaded, listLinks = loadListDownloaded(oscar)
     #load the frames from the predownloaded videos. 
     frames = loadFramesPreDownloaded(listDownloaded, listLinks,desiredSize, oscar)
+    #numVideos x 4 x 270 x 480 x 3
     print("category frames shape: ", frames.shape)
     numVideos = frames.shape[0]
     print("number of videos to process: ", numVideos)
@@ -66,5 +67,5 @@ def generateRandomPoints(numVideos, numPoints, desiredSize):
         listPoints.append(coords)
     return np.stack(listPoints, dtype = int)
 
-diftChange(False)
+diftChange(True)
 #loadAndDisplay()
