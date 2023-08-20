@@ -50,7 +50,8 @@ def callDift(frames, points, names, oscar=True):
         saveFrames(frame, name, oscar)
         #save the points. Would have to combine this with saveResults if we implemented TODO in diftChange. 
         savePoints(pointsFrame, name, oscar)
-        saveResults(matchedArrayPoints, name, oscar)
+        #had wrong thing here earlier got bad results. 
+        saveResults(frameMatched, name, oscar)
     arrayPoints = np.stack(listResultPoints)
     return arrayPoints
 def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, beginningPoints):

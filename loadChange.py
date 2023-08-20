@@ -1,6 +1,6 @@
 import numpy as np
 from imageDisplay import displayFrames
-from dataTransfer import videoPath, saveFrames
+from dataTransfer import videoPath
 from extractFrames import extractFrames
 from annotations import  annotations
         
@@ -15,10 +15,11 @@ def loadFramesPreDownloaded(listDownloaded, listLinks, desiredSize, oscar):
     #want to load in annotations. Links assure they match the actual file names. 
     listFrames = []
     count = 0
+    numDesiredVideos = 3
     #can use some condition with count. 
     for i in range(len(listDownloaded)):
         #optional parameter to limit number of videos. Used mostly for testing. 
-        if count>2:
+        if count>=numDesiredVideos:
             break
         name = listDownloaded[i]
         link = listLinks[i]

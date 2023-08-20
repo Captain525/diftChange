@@ -5,7 +5,9 @@ def loadAndDisplay(oscar=False):
     Displays the results obtained and trasmitted to the right place. Make sure finalSize matches with diftChange final size. 
     """
     #how many videos to load. 
-    num_images = 5
+    num_images = 3
+
+    #PROBLEM - NOT ALL VIDEOS WITH NAMES WORK. 
     #names of the vidoes, needed for loading. 
     names, links = loadListDownloaded(oscar)
     finalSize = 768
@@ -21,5 +23,7 @@ def loadAndDisplay(oscar=False):
             image = convertPIL(frames[j], finalSize)
             imageList.append(image)
         results = loadResults(name, oscar)
+        print("results shape: ", results.shape)
        
         displayImageList(beginningImage, imageList, points, results)
+loadAndDisplay(False)

@@ -71,7 +71,4 @@ def loadListDownloaded(oscar):
     names, links = zip(*nameLinks)
     nameList = list(names)
     linkList = list(links)
-    print(nameLinks)
-    print(names)
-    print(links)
     return nameList, linkList
