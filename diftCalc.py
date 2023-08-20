@@ -74,7 +74,7 @@ def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, b
     startUp = time.time()
     #get these upsampled feature sizes with sizeFinal. 
     beginningFeaturesImage = nn.Upsample(sizeFinal, mode='bilinear')(features[0].unsqueeze(0))
-    
+    print(beginningFeaturesImage.shape)
     #don't need to unsqueeze with colon
     endFeaturesImage = nn.Upsample(sizeFinal, mode = "bilinear")(features[1:])
     endUp = time.time()
@@ -92,13 +92,14 @@ def doMatching(dift, beginningFrame, endFrame, prompt, sizeFinal, sizeNetwork, b
         del beginningFeatureVector
         #print("shape cos map: ", cosMap.shape)
         maxValue = cosMap[0].max()
+        #column major. 
         max_yx = np.unravel_index(cosMap[0].argmax(), cosMap[0].shape)
         del cosMap
+        #NO IDEA IF ALL THIS IS RIGHT WITH X VS Y CONFUSED. 
         maxX = max_yx[1].item()
         maxY = max_yx[0].item()
         endPoints[i, 0] = maxX
         endPoints[i, 1] = maxY
-        
         
         #print("beginning coords: ", x, y)
         #print("max coords(x,y): ", maxX, maxY)
@@ -140,9 +141,131 @@ def diffusionCalc(dift, listFrames, listPrompts, sizeNetwork):
                            prompt=prompt,
                            ensemble_size=ensemble_size, up_ft_index = 1, t=26))
             del img_tensor
+            gc.collect()
+            torch.cuda.empty_cache()
 
     ft = torch.cat(ft, dim=0)
     print("features shape: ", ft.shape)
     gc.collect()
     torch.cuda.empty_cache()
     return ft
+
+
+def callDiftFaster(frames, points, names, oscar=True):
+    """
+    Does all the dift calculations and operations on the frames to get the result points. 
+    numVideos x numFrames x desiredSize[1] x desiredSize[0] x 3
+    points is numVideos x numPoints x 2
+    First in numFrames is the point frame, others are inference frames. 
+    """
+    torch.cuda.set_device(0)
+    #use default model weights. 
+    sizeNetwork = 768
+    sizeFinal = 768
+    listResultPoints = []
+    #for each video. 
+    for i in range(frames.shape[0]):
+        print("Video {}/{}".format(i+1, frames.shape[0]))
+        frame = frames[i]
+        name = names[i]
+        pointsFrame = points[i]
+        #checking it isn't JUST the beginning frame. 
+        assert(frame.shape[0]>1)
+        beginningFrame = frame[0]
+        #frames we want to run the matching algorithm on. 
+        otherFrames = frame[1:]
+        print("other frames shape: ", otherFrames.shape)
+        #maybe add prompt later. 
+        #hopefully this loop is fast enough of a way to do it.
+        frameMatched = doMatchingFast(beginningFrame, otherFrames,"", sizeFinal, sizeNetwork, pointsFrame)
+        print(frameMatched.shape)
+        listResultPoints.append(frameMatched)
+        saveFrames(frame, name, oscar)
+        #save the points. Would have to combine this with saveResults if we implemented TODO in diftChange. 
+        savePoints(pointsFrame, name, oscar)
+        #had wrong thing here earlier got bad results. 
+        saveResults(frameMatched, name, oscar)
+    arrayPoints = np.stack(listResultPoints)
+    return arrayPoints
+def doMatchingFast(beginningFrame, otherFrames, prompt, sizeFinal, sizeNetwork, beginningPoints):
+    """
+    Takes in the beginning frame and one of the inference frames and does the calculations on them. 
+    This basically is the same as it was before changing for multiple inference frames, just call on each individually. 
+    """
+    print("got to matching")
+    dift = SDFeaturizer()
+    numOther = otherFrames.shape[0]
+    #get features to do interesting stuff with. 
+    numPoints = beginningPoints.shape[0]
+    #use sizeNetwork for diffusion calculation. 
+    startCalc = time.time()
+    max_memory_allocated = torch.cuda.memory_allocated()
+    print("Memory before: ", max_memory_allocated)
+    features = diffusionCalc(dift,[beginningFrame] + list(otherFrames), [prompt]*(1+ numOther), sizeNetwork)
+    endCalc = time.time()
+    del beginningFrame
+    del otherFrames
+    print("Memory After: ", torch.cuda.memory_allocated())
+    print("Time Calculate Features: {} seconds".format(endCalc-startCalc))
+    numChannels = features.shape[1]
+    #1 x channelDepth x imgHeightDif ximgWidthDif
+    #upsample feature map until it has the dimensions of the image we desire. 
+    #will definitely increase in size. this is likely to be a place where size effects the results. 
+    startUp = time.time()
+    #get these upsampled feature sizes with sizeFinal. 
+    beginningFeatures = nn.Upsample(sizeFinal, mode='bilinear')(features[0].unsqueeze(0))
+    print("beginning features shape: ", beginningFeatures.shape)
+    #don't need to unsqueeze with colon
+    #numVideos, numChannels, yPixels, xPixels. 
+    otherFeatures = nn.Upsample(sizeFinal, mode = "bilinear")(features[1:])
+    print("other features shape: ", otherFeatures.shape)
+    endUp = time.time()
+    print("Time Upsampling: {} seconds".format(endUp-startUp))
+    del features
+    print("Memory before deletion: ", torch.cuda.memory_allocated())
+    del dift
+    gc.collect()
+    torch.cuda.empty_cache()
+    print("memory after deletion: ", torch.cuda.memory_allocated())
+    startProd = time.time()
+    x = beginningPoints[:, 0]
+    y = beginningPoints[:, 1]
+    #should be size numChannels x numPoints. How to get the numPoints to broadcast
+    print("shape before view: ", beginningFeatures[0, :, y, x].shape)
+    #should be 
+    with torch.no_grad():
+        beginningFeatureVector = beginningFeatures[0, :, y, x].view(numPoints, 1, numChannels, 1, 1)
+        print(beginningFeatureVector.dtype)
+        print("shape after view: ", beginningFeatureVector.shape)
+        print("shape other: ", otherFeatures.shape)
+    
+        normalizedFeatureVec = beginningFeatureVector/beginningFeatureVector.norm(dim=2)[:, None]
+        print(normalizedFeatureVec.shape)
+        del beginningFeatureVector
+        normalizedOtherVector = otherFeatures/otherFeatures.norm(dim=1)[:, None]
+        del otherFeatures
+        print(normalizedOtherVector.shape)
+        print("memory after deletion: ", torch.cuda.memory_allocated())
+        #ASTOUNDING, MEMORY ISSUE SOLVED, tensordot and matmul and cos don't work. usually 843 GB!!!!This works inplace so saves memory. 
+        product = torch.einsum('...nc, kjl...c -> kjln', normalizedFeatureVec.permute(1,3,4,0,2), (normalizedOtherVector.unsqueeze(0)).permute(1, 3,4,0,2)).permute(3, 0,1,2).cpu().numpy()
+        print("shape of product: ",product.shape)
+        del normalizedOtherVector
+        del normalizedFeatureVec
+        #(product.view(numPoints, numOther, sizeFinal*sizeFinal)).argmax(dim=-1)
+        argmaxed = np.argmax(np.reshape( product, (numPoints, numOther, -1)), axis=-1)
+        #assume row major. 
+        del product
+        zeroArgmaxed = argmaxed//sizeFinal
+        oneArgmaxed = argmaxed%sizeFinal
+        #hopefully axes aren't messesd up. 
+        del argmaxed
+        finalResults = np.stack([zeroArgmaxed, oneArgmaxed], axis=-1)
+        #CHECK IT HERE SOMEHOW. MAKE CHECK FOR AXES. 
+
+        del oneArgmaxed
+        del zeroArgmaxed
+        endProd = time.time()
+        print("Time inner for calc: {} seconds".format(endProd-startProd))
+        gc.collect()
+        torch.cuda.empty_cache()    
+        return finalResults

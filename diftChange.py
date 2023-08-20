@@ -1,7 +1,7 @@
 
 import numpy as np
 from loadChange import loadFramesPreDownloaded
-from diftCalc import callDift
+from diftCalc import callDift, callDiftFaster
 from dataTransfer import loadListDownloaded
 
 def diftChange(oscar):
@@ -29,7 +29,7 @@ def diftChange(oscar):
     #still need to save these points because can't display in oscar.
     points = generateRandomPoints(numVideos, numPoints, finalSize)
     #gets results and saves them. 
-    resultPoints = callDift(frames, points, listDownloaded, oscar)
+    resultPoints = callDiftFaster(frames, points, listDownloaded, oscar)
     print("results shape: ", resultPoints.shape)
     
 def generateRandomPoints(numVideos, numPoints, desiredSize):
@@ -68,4 +68,3 @@ def generateRandomPoints(numVideos, numPoints, desiredSize):
     return np.stack(listPoints, dtype = int)
 
 diftChange(True)
-#loadAndDisplay()
