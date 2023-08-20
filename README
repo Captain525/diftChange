@@ -3,3 +3,9 @@ Use prelabeled data.
 
 Things to do:
 TEst on oscar. 
+
+RESULTS: 
+Matching seems reasonable, but problem is not enough points get in the areas we care about. Also it's too small of a sample size to really seriously consider. 
+Maybe implement grid pattern instead of just random pixels so we guarantee some in certain spaces. 
+
+BUG: NEed a way of tracking which names have had results obtained, OR a way to get the files and their names without caring about the names themselves. Make another file this time stored with the results tracking which video files have had results obtained. 

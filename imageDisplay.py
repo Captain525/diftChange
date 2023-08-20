@@ -26,7 +26,7 @@ def displayImageList(beginningImage, imageList, initPoints, resultsArray):
           axes[i+1].clear()
           axes[i+1].imshow(imageList[i])
           axes[i+1].scatter(results[:,0], results[:, 1], c=colors, s=scatter_size)
-          axes[i+1].set_title('result image number: ', i+1)
+          axes[i+1].set_title("result image number: {}".format(i+1))
      plt.show()
 def displayImages(beginningImage, endImage, initPoints, endPoints):
     """

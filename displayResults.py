@@ -3,6 +3,8 @@ from imageDisplay import convertPIL, displayImages, displayImageList
 def loadAndDisplay(oscar=False):
     """
     Displays the results obtained and trasmitted to the right place. Make sure finalSize matches with diftChange final size. 
+    
+    BUG: Not all loaded names will be valid points to load, since some of them are skipped. How to fix this? 
     """
     #how many videos to load. 
     num_images = 3
@@ -23,7 +25,6 @@ def loadAndDisplay(oscar=False):
             image = convertPIL(frames[j], finalSize)
             imageList.append(image)
         results = loadResults(name, oscar)
-        print("results shape: ", results.shape)
        
         displayImageList(beginningImage, imageList, points, results)
 loadAndDisplay(False)

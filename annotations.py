@@ -21,7 +21,7 @@ def loadAnnotations(csvLink):
     """
     annotationCSV = pd.read_csv(csvLink)
     listAnnotations = annotationCSV.iloc(axis=1)[1].values.tolist()
-    print("list annotations: ", listAnnotations)
+    #print("list annotations: ", listAnnotations)
     return middleFirst(listAnnotations)
 def middleFirst(listAnnotations):
     """
