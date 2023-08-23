@@ -15,7 +15,7 @@ def displayImageList(beginningImage, imageList, initPoints, resultsArray):
      fig, axes = plt.subplots(1, numImages+1, figsize = ((numImages+1)*fig_size, fig_size))
      plt.tight_layout()
      #want numPoints
-     print(resultsArray.shape)
+     print("shape of results: ", resultsArray.shape)
      colors = cm.rainbow(np.linspace(0, 1,resultsArray.shape[1]))
      axes[0].clear()
      axes[0].imshow(beginningImage)

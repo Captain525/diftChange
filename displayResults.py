@@ -15,16 +15,20 @@ def loadAndDisplay(oscar=False):
     finalSize = 768
     for i in range(num_images):
         name = names[i]
-        points = loadPoints(name, oscar)
-        frames = loadFrames(name, oscar)
-        imageList = []
-        #TODO: could make it so that beginning image is in the list, but would have to combine points and results. For now, keep as is. \
-        #Would have to change this method and the saving points methods and the displayImageList Method. 
-        beginningImage = convertPIL(frames[0], finalSize)
-        for j in range(1, frames.shape[0]):
-            image = convertPIL(frames[j], finalSize)
-            imageList.append(image)
-        results = loadResults(name, oscar)
+        try:
+            points = loadPoints(name, oscar)
+            frames = loadFrames(name, oscar)
+            imageList = []
+            #TODO: could make it so that beginning image is in the list, but would have to combine points and results. For now, keep as is. \
+            #Would have to change this method and the saving points methods and the displayImageList Method. 
+            beginningImage = convertPIL(frames[0], finalSize)
+            for j in range(1, frames.shape[0]):
+                image = convertPIL(frames[j], finalSize)
+                imageList.append(image)
+            results = loadResults(name, oscar)
+            displayImageList(beginningImage, imageList, points, results)
+        except OSError:
+            print("Couldn't find the file, ie it doesn't exist. ")
        
-        displayImageList(beginningImage, imageList, points, results)
+        
 loadAndDisplay(False)

@@ -66,5 +66,6 @@ def generateRandomPoints(numVideos, numPoints, desiredSize):
         assert(coords.shape == (numPoints, 2))
         listPoints.append(coords)
     return np.stack(listPoints, dtype = int)
-
+def genGridPoints(numVideos, numPoints, desiredSize):
+    return 
 diftChange(True)
